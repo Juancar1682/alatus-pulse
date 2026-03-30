@@ -27,6 +27,15 @@ export default function Dashboard() {
   const [selectedPracticeId, setSelectedPracticeId] = useState<number | null>(
     null,
   );
+  const [search, setSearch] = useState("");
+  const [healthFilter, setHealthFilter] = useState<
+    "all" | "healthy" | "at_risk" | "struggling"
+  >("all");
+  const [sourceFilter, setSourceFilter] = useState<
+    "all" | "dentalpost" | "illumitrac"
+  >("all");
+  const [minimized, setMinimized] = useState(false);
+  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
   const [practices, setPractices] = useState<Practice[]>([]);
 
   useEffect(() => {
@@ -63,6 +72,26 @@ export default function Dashboard() {
 
   const latestDp = dpMetrics[dpMetrics.length - 1];
   const latestIt = itMetrics[itMetrics.length - 1];
+  const filteredPractices = practices
+    .filter((p) => {
+      if (search && !p.name.toLowerCase().includes(search.toLowerCase()))
+        return false;
+      if (healthFilter === "healthy" && p.health_score < 70) return false;
+      if (
+        healthFilter === "at_risk" &&
+        (p.health_score < 40 || p.health_score >= 70)
+      )
+        return false;
+      if (healthFilter === "struggling" && p.health_score >= 40) return false;
+      if (sourceFilter === "dentalpost" && p.open_jobs < 5) return false;
+      if (sourceFilter === "illumitrac" && p.churn_rate < 0.1) return false;
+      return true;
+    })
+    .sort((a, b) =>
+      sortOrder === "asc"
+        ? a.health_score - b.health_score
+        : b.health_score - a.health_score,
+    );
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -109,49 +138,208 @@ export default function Dashboard() {
 
         {/* Practices Table */}
         <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-          <div className="px-5 py-4 border-b border-gray-100">
-            <h2 className="text-base font-bold text-gray-800">
-              Practice Health
-            </h2>
-            <p className="text-xs text-gray-400 mt-0.5">
-              Sorted by health score — worst first
-            </p>
-          </div>
-          <div className="divide-y divide-gray-50">
-            {practices.slice(0, 8).map((p: Practice) => (
-              <div
-                key={p.id}
-                onClick={() => setSelectedPracticeId(p.id)}
-                className="flex items-center justify-between px-5 py-3 hover:bg-gray-50 cursor-pointer transition-colors"
-              >
-                <div>
-                  <p className="text-sm font-medium text-gray-800">{p.name}</p>
-                  <p className="text-xs text-gray-400">
-                    {p.city}, {p.state}
-                  </p>
-                </div>
-                <div className="flex items-center gap-4">
-                  <span className="text-xs text-gray-500">
-                    {p.open_jobs} open jobs
-                  </span>
-                  <span className="text-xs text-gray-500">
-                    {(p.churn_rate * 100).toFixed(1)}% churn
-                  </span>
-                  <span
-                    className={`text-xs font-semibold px-2.5 py-1 rounded-full ${
-                      p.health_score >= 70
-                        ? "bg-green-50 text-green-700"
-                        : p.health_score >= 40
-                          ? "bg-yellow-50 text-yellow-700"
-                          : "bg-red-50 text-red-700"
-                    }`}
-                  >
-                    {p.health_score}
-                  </span>
-                </div>
+          <div className="px-5 py-4 border-b border-gray-100 space-y-3">
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-base font-bold text-gray-800">
+                  Practice Health
+                </h2>
+                <p className="text-xs text-gray-400 mt-0.5">
+                  {filteredPractices.length} of {practices.length} practices
+                </p>
               </div>
-            ))}
+
+              {/* Sort + Minimize */}
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() =>
+                    setSortOrder((prev) => (prev === "asc" ? "desc" : "asc"))
+                  }
+                  className="flex items-center gap-1.5 text-xs px-3 py-1.5 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+                  title={
+                    sortOrder === "asc"
+                      ? "Showing worst first"
+                      : "Showing best first"
+                  }
+                >
+                  {sortOrder === "asc" ? (
+                    <>
+                      <span className="text-gray-500">Worst first</span>
+                    </>
+                  ) : (
+                    <>
+                      <span className="text-gray-500">Best first</span>
+                    </>
+                  )}
+                </button>
+
+                <button
+                  onClick={() => setMinimized((prev) => !prev)}
+                  className="flex items-center gap-1.5 text-xs px-3 py-1.5 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+                >
+                  {minimized ? "Show More" : "Show Less"}
+                </button>
+              </div>
+            </div>
+
+            {/* Filters — hide when minimized */}
+            {!minimized && (
+              <div className="flex flex-wrap gap-2">
+                <input
+                  type="text"
+                  placeholder="Search practices..."
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  className="text-xs px-3 py-1.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-300 w-44"
+                />
+                <select
+                  value={healthFilter}
+                  onChange={(e) =>
+                    setHealthFilter(e.target.value as typeof healthFilter)
+                  }
+                  className="text-xs px-3 py-1.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-300 bg-white"
+                >
+                  <option value="all">All health tiers</option>
+                  <option value="healthy">Healthy (70+)</option>
+                  <option value="at_risk">At risk (40–69)</option>
+                  <option value="struggling">Struggling (under 40)</option>
+                </select>
+                <select
+                  value={sourceFilter}
+                  onChange={(e) =>
+                    setSourceFilter(e.target.value as typeof sourceFilter)
+                  }
+                  className="text-xs px-3 py-1.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-300 bg-white"
+                >
+                  <option value="all">All issues</option>
+                  <option value="dentalpost">DentalPost issues</option>
+                  <option value="illumitrac">IllumiTrac issues</option>
+                </select>
+                {(search ||
+                  healthFilter !== "all" ||
+                  sourceFilter !== "all") && (
+                  <button
+                    onClick={() => {
+                      setSearch("");
+                      setHealthFilter("all");
+                      setSourceFilter("all");
+                    }}
+                    className="text-xs px-3 py-1.5 text-indigo-600 hover:text-indigo-800 underline"
+                  >
+                    Clear filters
+                  </button>
+                )}
+              </div>
+            )}
           </div>
+
+          {/* Rows — minimized shows first 3 opaque, rest faded */}
+          {!minimized ? (
+            <div className="divide-y divide-gray-50">
+              {filteredPractices.length === 0 ? (
+                <div className="px-5 py-8 text-center text-sm text-gray-400">
+                  No practices match your filters
+                </div>
+              ) : (
+                filteredPractices.map((p: Practice) => (
+                  <div
+                    key={p.id}
+                    onClick={() => setSelectedPracticeId(p.id)}
+                    className="flex items-center justify-between px-5 py-3 hover:bg-gray-50 cursor-pointer transition-colors"
+                  >
+                    <div>
+                      <p className="text-sm font-medium text-gray-800">
+                        {p.name}
+                      </p>
+                      <p className="text-xs text-gray-400">
+                        {p.city}, {p.state}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-4">
+                      <span className="text-xs text-gray-500">
+                        {p.open_jobs} open jobs
+                      </span>
+                      <span className="text-xs text-gray-500">
+                        {(p.churn_rate * 100).toFixed(1)}% churn
+                      </span>
+                      <span
+                        className={`text-xs font-semibold px-2.5 py-1 rounded-full ${
+                          p.health_score >= 70
+                            ? "bg-green-50 text-green-700"
+                            : p.health_score >= 40
+                              ? "bg-yellow-50 text-yellow-700"
+                              : "bg-red-50 text-red-700"
+                        }`}
+                      >
+                        {p.health_score}
+                      </span>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          ) : (
+            /* Minimized — show 3 rows, fade the rest */
+            <div className="relative">
+              <div className="divide-y divide-gray-50">
+                {filteredPractices
+                  .slice(0, 5)
+                  .map((p: Practice, index: number) => (
+                    <div
+                      key={p.id}
+                      onClick={() => {
+                        setMinimized(false);
+                        setSelectedPracticeId(p.id);
+                      }}
+                      className={`flex items-center justify-between px-5 py-3 cursor-pointer transition-colors ${
+                        index >= 3 ? "opacity-30" : "hover:bg-gray-50"
+                      }`}
+                    >
+                      <div>
+                        <p className="text-sm font-medium text-gray-800">
+                          {p.name}
+                        </p>
+                        <p className="text-xs text-gray-400">
+                          {p.city}, {p.state}
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-4">
+                        <span className="text-xs text-gray-500">
+                          {p.open_jobs} open jobs
+                        </span>
+                        <span className="text-xs text-gray-500">
+                          {(p.churn_rate * 100).toFixed(1)}% churn
+                        </span>
+                        <span
+                          className={`text-xs font-semibold px-2.5 py-1 rounded-full ${
+                            p.health_score >= 70
+                              ? "bg-green-50 text-green-700"
+                              : p.health_score >= 40
+                                ? "bg-yellow-50 text-yellow-700"
+                                : "bg-red-50 text-red-700"
+                          }`}
+                        >
+                          {p.health_score}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+              </div>
+
+              {/* Fade overlay */}
+              <div className="absolute bottom-0 left-0 right-0 h-12 bg-gradient-to-t from-white to-transparent pointer-events-none" />
+
+              {/* Expand prompt */}
+              <div className="text-center py-2">
+                <button
+                  onClick={() => setMinimized(false)}
+                  className="text-xs text-indigo-500 hover:text-indigo-700"
+                >
+                  Show all {filteredPractices.length} practices
+                </button>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Practice Modal */}
