@@ -25,19 +25,16 @@ def query(request: QueryRequest, db: Session = Depends(get_db)):
     tools_used = []
     messages = [{"role": "user", "content": request.question}]
 
-    system_prompt = """You are an analytics assistant for Alatus Solutions, 
-a dental industry MarTech company. You have access to unified data from 
-two products: DentalPost (dental job board) and IllumiTrac (membership 
-subscription software). Use the available tools to answer questions about 
-practice health, hiring trends, membership metrics, and portfolio performance. 
-Be concise and actionable. Always cite specific practice names and numbers."""
+    system_prompt = """You are a concise analytics assistant for Alatus Solutions.
+Use tools to answer questions about practice health, hiring, and membership.
+Keep answers under 150 words. Be direct and specific. No unnecessary preamble."""
 
     # ── Agentic loop
 
     while True:
         response = client.messages.create(
-            model="claude-sonnet-4-20250514",
-            max_tokens=1024,
+            model="claude-haiku-4-5-20251001",
+            max_tokens=400,
             system=system_prompt,
             tools=TOOL_DEFINITIONS,
             messages=messages,
