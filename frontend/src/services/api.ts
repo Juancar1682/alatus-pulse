@@ -3,6 +3,7 @@ import type {
   DentalPostMetrics,
   IllumiTracMetrics,
   PulseInsight,
+  QueryResponse,
 } from "../types";
 
 const api = axios.create({
@@ -27,3 +28,12 @@ export const fetchInsights = async (): Promise<PulseInsight[]> => {
   const { data } = await api.get("/insights/");
   return data;
 };
+
+export async function askPulse(question: string): Promise<QueryResponse> {
+  const res = await fetch("http://localhost:8000/api/query", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ question }),
+  });
+  return res.json();
+}

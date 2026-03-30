@@ -14,6 +14,7 @@ import InsightCard from "../components/InsightCard";
 import StatCard from "../components/StatCard";
 import { Activity } from "lucide-react";
 import LiveFeed from "../components/LiveFeed";
+import QueryInterface from "../components/QueryInterface";
 
 export default function Dashboard() {
   const [dpMetrics, setDpMetrics] = useState<DentalPostMetrics[]>([]);
@@ -93,6 +94,9 @@ export default function Dashboard() {
             sub="IllumiTrac"
           />
         </div>
+
+        {/* AI QUery */}
+        <QueryInterface />
 
         {/* Charts */}
         <div className="grid md:grid-cols-2 gap-6">

@@ -32,3 +32,8 @@ export interface LiveEvent {
   description: string;
   occurred_at: string;
 }
+
+export interface QueryResponse {
+  answer: string;
+  tools_used: string[];
+}
