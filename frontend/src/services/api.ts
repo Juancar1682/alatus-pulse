@@ -37,3 +37,13 @@ export async function askPulse(question: string): Promise<QueryResponse> {
   });
   return res.json();
 }
+
+export async function fetchPracticeById(id: number) {
+  const res = await fetch(`http://localhost:8000/api/practices/${id}`);
+  return res.json();
+}
+
+export async function fetchPractices() {
+  const { data } = await api.get("/practices");
+  return data;
+}

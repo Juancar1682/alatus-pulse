@@ -3,11 +3,13 @@ import {
   fetchDentalPostMetrics,
   fetchIllumiTracMetrics,
   fetchInsights,
+  fetchPractices,
 } from "../services/api";
 import type {
   DentalPostMetrics,
   IllumiTracMetrics,
   PulseInsight,
+  Practice,
 } from "../types";
 import MetricsChart from "../components/MetricsChart";
 import InsightCard from "../components/InsightCard";
@@ -15,24 +17,31 @@ import StatCard from "../components/StatCard";
 import { Activity } from "lucide-react";
 import LiveFeed from "../components/LiveFeed";
 import QueryInterface from "../components/QueryInterface";
+import PracticeModal from "../components/PracticeModal";
 
 export default function Dashboard() {
   const [dpMetrics, setDpMetrics] = useState<DentalPostMetrics[]>([]);
   const [itMetrics, setItMetrics] = useState<IllumiTracMetrics[]>([]);
   const [insights, setInsights] = useState<PulseInsight[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selectedPracticeId, setSelectedPracticeId] = useState<number | null>(
+    null,
+  );
+  const [practices, setPractices] = useState<Practice[]>([]);
 
   useEffect(() => {
     async function loadData() {
       try {
-        const [dp, it, ins] = await Promise.all([
+        const [dp, it, ins, pracs] = await Promise.all([
           fetchDentalPostMetrics(),
           fetchIllumiTracMetrics(),
           fetchInsights(),
+          fetchPractices(),
         ]);
         setDpMetrics(dp);
         setItMetrics(it);
         setInsights(ins);
+        setPractices(pracs);
       } catch (err) {
         console.error("Failed to load data:", err);
       } finally {
@@ -97,6 +106,61 @@ export default function Dashboard() {
 
         {/* AI QUery */}
         <QueryInterface />
+
+        {/* Practices Table */}
+        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+          <div className="px-5 py-4 border-b border-gray-100">
+            <h2 className="text-base font-bold text-gray-800">
+              Practice Health
+            </h2>
+            <p className="text-xs text-gray-400 mt-0.5">
+              Sorted by health score — worst first
+            </p>
+          </div>
+          <div className="divide-y divide-gray-50">
+            {practices.slice(0, 8).map((p: Practice) => (
+              <div
+                key={p.id}
+                onClick={() => setSelectedPracticeId(p.id)}
+                className="flex items-center justify-between px-5 py-3 hover:bg-gray-50 cursor-pointer transition-colors"
+              >
+                <div>
+                  <p className="text-sm font-medium text-gray-800">{p.name}</p>
+                  <p className="text-xs text-gray-400">
+                    {p.city}, {p.state}
+                  </p>
+                </div>
+                <div className="flex items-center gap-4">
+                  <span className="text-xs text-gray-500">
+                    {p.open_jobs} open jobs
+                  </span>
+                  <span className="text-xs text-gray-500">
+                    {(p.churn_rate * 100).toFixed(1)}% churn
+                  </span>
+                  <span
+                    className={`text-xs font-semibold px-2.5 py-1 rounded-full ${
+                      p.health_score >= 70
+                        ? "bg-green-50 text-green-700"
+                        : p.health_score >= 40
+                          ? "bg-yellow-50 text-yellow-700"
+                          : "bg-red-50 text-red-700"
+                    }`}
+                  >
+                    {p.health_score}
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Practice Modal */}
+        {selectedPracticeId && (
+          <PracticeModal
+            practiceId={selectedPracticeId}
+            onClose={() => setSelectedPracticeId(null)}
+          />
+        )}
 
         {/* Charts */}
         <div className="grid md:grid-cols-2 gap-6">
