@@ -13,6 +13,7 @@ import MetricsChart from "../components/MetricsChart";
 import InsightCard from "../components/InsightCard";
 import StatCard from "../components/StatCard";
 import { Activity } from "lucide-react";
+import LiveFeed from "../components/LiveFeed";
 
 export default function Dashboard() {
   const [dpMetrics, setDpMetrics] = useState<DentalPostMetrics[]>([]);
@@ -120,6 +121,9 @@ export default function Dashboard() {
             color="#ef4444"
           />
         </div>
+
+        {/* Live Activity feed */}
+        <LiveFeed />
 
         {/* AI Insights */}
         <section>
