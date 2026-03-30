@@ -7,6 +7,7 @@ from routers.metrics import router as metrics_router
 from routers.insights import router as insights_router
 from routers.practices import router as practices_router
 from routers.live_feed import router as live_feed_router
+from routers.query import router as query_router
 
 app = FastAPI(title="Alatus Pulse API")
 
@@ -21,6 +22,7 @@ app.include_router(metrics_router)
 app.include_router(insights_router)
 app.include_router(practices_router)
 app.include_router(live_feed_router)
+app.include_router(query_router)
 
 @app.get("/health")
 def health():
